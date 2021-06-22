@@ -1,5 +1,7 @@
 package com.elevenine.filedownloadapp
 
+import android.net.Uri
+import android.webkit.MimeTypeMap
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
@@ -7,6 +9,7 @@ import moxy.InjectViewState
 import moxy.MvpPresenter
 import java.io.IOException
 import java.io.OutputStream
+import java.util.*
 
 @InjectViewState
 class MainPresenter : MvpPresenter<MainView>() {
@@ -52,6 +55,7 @@ class MainPresenter : MvpPresenter<MainView>() {
 
     override fun onFirstViewAttach() {
         super.onFirstViewAttach()
+        viewState.addTitle("Static type files")
         viewState.addFiles(staticTypeFiles)
         viewState.addTitle("Dynamic type files")
         viewState.addFiles(dynamicTypeFiles)
@@ -64,7 +68,8 @@ class MainPresenter : MvpPresenter<MainView>() {
 
     fun onFileClicked(fileModel: FileModel) {
         currentFileModel = fileModel
-        viewState.createNewDocument(fileModel.name)
+        if (fileModel.extension == null) viewState.createNewDocument(fileModel.name)
+        else viewState.selectFileLocation()
     }
 
     fun initDownload(fileOutputStream: OutputStream) {
@@ -94,6 +99,16 @@ class MainPresenter : MvpPresenter<MainView>() {
                     it.printStackTrace()
                 })
         )
+    }
+
+    fun onFileLocationSelected(destinationUri: Uri) {
+        val dynamicMimeType = currentFileModel?.extension
+        val type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(
+            dynamicMimeType?.lowercase(Locale.getDefault())
+        )
+        if (type != null) {
+            viewState.createNewFile(destinationUri, type, currentFileModel?.name.toString())
+        }
     }
 
 }
